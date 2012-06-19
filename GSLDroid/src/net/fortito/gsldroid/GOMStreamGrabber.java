@@ -1,19 +1,25 @@
 package net.fortito.gsldroid;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
+
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.util.Log;
 import android.widget.VideoView;
@@ -56,7 +62,7 @@ public class GOMStreamGrabber {
 	
 	/** GOMTV Login page */
 	private static final String GOM_LOGIN_PAGE = "https://ssl.gomtv.net/userinfo/loginProcess.gom";
-	
+	private static final String GOM_HOME_PAGE = "http://www.gomtv.net/";
 	/** Constructor
 	 * 
 	 * @param videoview VideoView to display stream in
@@ -87,8 +93,28 @@ public class GOMStreamGrabber {
 	startStream() throws GOMStreamException
 	{
 		login();
-		getLivePage();
-		parseLivePage();			
+		String livepage = "";
+		try {
+			livepage = getPage(getLivePageURL(null));
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String goxxml = getGOXXML(livepage);
+		try {
+			String url = getStreamURL(getPage(goxxml));
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
+		}
+		
+		// So we have the URL.
 	}
 	
 	/**
@@ -134,17 +160,80 @@ public class GOMStreamGrabber {
 		Log.d(TAG, "Logged in!");
 	}
 	
+	/**
+	 * Get the contents of a page, using the local httpcontext
+	 * @param URL The url of the page to get
+	 * @return The contents of the page
+	 */
 	private String
-	getLivePage() throws GOMStreamException
+	getPage(String URL) throws IOException,IllegalStateException
 	{
+		HttpGet req = new HttpGet(GOM_HOME_PAGE);
+		HttpResponse response = m_httpclient.execute(req,m_httpcontext);
+	
+		InputStream is = response.getEntity().getContent();
+	
+		byte buf[] = new byte[1024];
+		String ret = "";
+	
+		while(is.read(buf) != -1)
+		{
+				ret += new String(buf);
+		}
+		return ret;
 		
-		
-		return "";
 	}
 	
-	private void 
-	parseLivePage() throws GOMStreamException
+	/** Get Live page URL
+	 * Get the URL of the Live page
+	 */
+	private String getLivePageURL(String frontpage)
 	{
+		// FIXME: Make me more general
+		return "http://www.gomtv.net/main/goLive.gom";	
+	}
+
+	/**
+	 * Get the GOXXML URL from the Live page. Grabs the GOXXML according to the selected quality
+	 * @param livepage The contents of the live page
+	 * @return the GOX XML URL
+	 */
+	private String 
+	getGOXXML(String livepage) throws GOMStreamException
+	{
+		Pattern gox_pattern = Pattern.compile("[^/]+var.+(http://www.gomtv.net/gox[^;]+;)");
+		Matcher m = gox_pattern.matcher(livepage);
+		if(m.find())
+		{
+			String partialUrl = m.group(0);
+			return partialUrl.replaceFirst("\" \\+ playType \\+ \"",m_quality);
+			
+		}
+		else
+			throw new GOMStreamException(GOMStreamException.ERROR_PARSE_LIVE_PAGE, 
+					"Could not find GOX XML - this usually means GSL is not live at the moment");
+	}
+	/**
+	 * Get the stream URL from the gox xml
+	 * @param goxxml the contents of the GOX XML
+	 * @return the URL of the stream
+	 */ 
+	private String
+	getStreamURL(String goxxml)
+	{
+		Pattern stream_pattern = Pattern.compile("<REF href=\"([^\"]*)\"\\s*/>");
+		Matcher m = stream_pattern.matcher(goxxml);
+		String gomcmd = "";
+		if(m.find()){
+			gomcmd = m.group(0);
+		}
+		gomcmd = Uri.decode(gomcmd);
+		if(gomcmd.startsWith("gomp2p://")) 
+		{
+			gomcmd = gomcmd.replaceFirst("^.*LiveAddr=", "");
+		}
+		return gomcmd;
+		
 	}
 	
 		
@@ -157,6 +246,10 @@ public class GOMStreamGrabber {
 		public static final int ERROR_GET_LIVE_PAGE = 2;
 		/** Error parsing live page */
 		public static final int ERROR_PARSE_LIVE_PAGE = 3;
+		/** Error getting live page URL */
+		public static final int ERROR_GET_LIVE_PAGE_URL = 4;
+		/** Error getting the GOX XML */
+		public static final int ERROR_GET_GOX_XML = 5;
 		/** Exception ID */
 		
 		int id;
