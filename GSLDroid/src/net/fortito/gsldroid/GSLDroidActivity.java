@@ -10,6 +10,13 @@ import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.VideoView;
 
@@ -18,13 +25,14 @@ public class GSLDroidActivity extends Activity
 	//////////////////////////////////////////////
 	//////////// Widgets from layout /////////////
 	//////////////////////////////////////////////
-	private VideoView m_vv_videoview;
-	
+	EditText m_et_username;
+	EditText m_et_password;
+	Spinner m_spin_quality;
+	Button m_bt_go;
 	
 	//////////////////////////////////////////////
 	////////////// Class variables ///////////////
 	//////////////////////////////////////////////	
-	private GOMStreamGrabber m_grabber;
 	
 	
 	//////////////////////////////////////////////
@@ -39,75 +47,66 @@ public class GSLDroidActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);  
 
-        m_vv_videoview = (VideoView) findViewById(R.id.main_videoview);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String username = prefs.getString("GSLDROID_USERNAME","");
         String password = prefs.getString("GSLDROID_PASSWORD","");
         
-        m_grabber = new GOMStreamGrabber(m_vv_videoview,username, password, GOMStreamGrabber.QUALITY_SQ_TEST);
+        m_et_username = (EditText)findViewById(R.id.et_username);       
+        m_et_password = (EditText)findViewById(R.id.et_password);
+        m_spin_quality = (Spinner)findViewById(R.id.spin_quality);
+        ArrayAdapter<String> qualities = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+        qualities.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
+        qualities.add(GOMStreamGrabber.QUALITY_SQ);
+        qualities.add(GOMStreamGrabber.QUALITY_HQ);
+        m_spin_quality.setAdapter(qualities);
+
+        m_bt_go = (Button)findViewById(R.id.button1);
         
-     //   startVideo();
-	
+        m_bt_go.setOnClickListener(new OnClickListener() {
+			
+			public void onClick(View v) {
+				saveAuthData();
+				startVideo();
+				
+			}
+		});
+        
+        m_et_username.setText(username);
+        m_et_password.setText(password);
+        
+        
     }
     
-    /**
-     * Called when options menu item is selected
-     */
-    @Override
-    public boolean 
-    onOptionsItemSelected(MenuItem item)
-    {
-    	switch(item.getItemId())
-    	{
-    	case R.id.main_menu_settings:
-    		showSettings();
-    		break;
-    	case R.id.main_menu_play:
-    		startVideo();
-    		break;
-    	default:
-    		return false;
-    	}
-    return true;
-    }
-    /**
-     * Called when options menu is to be created
-     */
-    @Override
-    public boolean 
-    onCreateOptionsMenu(Menu menu)
-    {
-    	MenuInflater inflater = new MenuInflater(this);
-    	inflater.inflate(R.menu.main_menu_options, menu);
-    	return true;
-    }
+    
+    
     
 	//////////////////////////////////////////////
 	/////////////// Private methods //////////////
 	//////////////////////////////////////////////
     
-    /**
-     * Show settings dialog
-     */
-    private void 
-    showSettings()
+    private void saveAuthData()
     {
-    	Intent i = new Intent(this,GSLDroidSettingsActivity.class);
-    	startActivity(i);
+    	String password = m_et_password.getText().toString().trim();
+    	String username = m_et_username.getText().toString().trim();
+    	SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+    	editor.putString("GSLDROID_USERNAME", username);
+    	editor.putString("GSLDROID_PASSWORD",password);
     }
-    
     /**
      * Connect to GOM stream and start viewing
      */
     private void
     startVideo()
     {
-
+    	
+    	final GOMStreamGrabber grabber = new GOMStreamGrabber(this, m_et_username.getText().toString().trim(), m_et_password.getText().toString().trim(), (String)m_spin_quality.getAdapter().getItem(m_spin_quality.getSelectedItemPosition()));
+    	
     	new Thread(new Runnable() {
 
 			public void run() {
 				try {
-					m_grabber.startStream();
+					grabber.startStream();
 				} catch (GOMStreamException e) {
 					e.printStackTrace();
 				}

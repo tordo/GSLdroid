@@ -3,6 +3,7 @@ package net.fortito.gsldroid;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -19,9 +20,16 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 
+import android.content.Context;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnInfoListener;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.widget.VideoView;
 
 /**
@@ -44,18 +52,20 @@ public class GOMStreamGrabber {
 	/** Stream Quality: SQ TEST */
 	public static final String QUALITY_SQ_TEST = "SQTest";
 	/** Stream Quality: SQ */
-	public static final String QUALITY_SQ= "SQ";
+	public static final String QUALITY_SQ = "SQ";
 	/** Stream Quality: HQ */
 	public static final String QUALITY_HQ = "HQ";
 	
-	/** VideoView to show the video in */
-	private VideoView m_videoview;
+
 	/** Http client to do our requests */
 	private AndroidHttpClient m_httpclient;
 	/** HttpContext to keep our cookies */
 	private BasicHttpContext m_httpcontext;
 	/** Cookie store, member variable to ease debugging */
 	private BasicCookieStore m_cookies;
+	
+	/** Context */
+	private Context m_context;
 	
 	/** Tag for logging */
 	private static final String TAG = "GOMStreamGrabber";
@@ -69,15 +79,17 @@ public class GOMStreamGrabber {
 	 * @param username GOMTV username
 	 * @param password GOMTV password
 	 */
-	public GOMStreamGrabber(VideoView videoview, String username, String password, String quality)
+	public GOMStreamGrabber(Context ctx, String username, String password, String quality)
 	{
-		m_videoview = videoview;
+		m_context = ctx;
 		m_username = username;
 		m_password = password;
 		m_quality = quality;
 		m_httpclient = AndroidHttpClient.newInstance(null);
 		m_httpcontext = new BasicHttpContext();
+		m_httpclient.getParams().setBooleanParameter("http.protocol.handle-redirects", true);
 		m_cookies = new BasicCookieStore();
+
 		m_httpcontext.setAttribute(ClientContext.COOKIE_STORE, m_cookies);
 	}
 	
@@ -92,7 +104,9 @@ public class GOMStreamGrabber {
 	public void 
 	startStream() throws GOMStreamException
 	{
+		
 		login();
+		
 		String livepage = "";
 		try {
 			livepage = getPage(getLivePageURL(null));
@@ -104,8 +118,9 @@ public class GOMStreamGrabber {
 			e.printStackTrace();
 		}
 		String goxxml = getGOXXML(livepage);
+		String url = "";
 		try {
-			String url = getStreamURL(getPage(goxxml));
+			url = getStreamURL(getPage(goxxml));
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
@@ -114,7 +129,8 @@ public class GOMStreamGrabber {
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
 		}
 		
-		// So we have the URL.
+		playStream(url);
+		
 	}
 	
 	/**
@@ -168,7 +184,7 @@ public class GOMStreamGrabber {
 	private String
 	getPage(String URL) throws IOException,IllegalStateException
 	{
-		HttpGet req = new HttpGet(GOM_HOME_PAGE);
+		HttpGet req = new HttpGet(URL);
 		HttpResponse response = m_httpclient.execute(req,m_httpcontext);
 	
 		InputStream is = response.getEntity().getContent();
@@ -201,12 +217,16 @@ public class GOMStreamGrabber {
 	private String 
 	getGOXXML(String livepage) throws GOMStreamException
 	{
+		// FIXME: Support for multiple streams
 		Pattern gox_pattern = Pattern.compile("[^/]+var.+(http://www.gomtv.net/gox[^;]+;)");
 		Matcher m = gox_pattern.matcher(livepage);
 		if(m.find())
 		{
-			String partialUrl = m.group(0);
-			return partialUrl.replaceFirst("\" \\+ playType \\+ \"",m_quality);
+			String partialUrl = m.group(1);
+			partialUrl = partialUrl.replaceFirst("\" \\+ playType \\+ \"",m_quality);
+			partialUrl = partialUrl.replaceFirst("\"\\+ tmpThis.title \\+\"&\";","GSL");
+			partialUrl = partialUrl.replaceAll("&amp;","&");
+			return partialUrl;
 			
 		}
 		else
@@ -225,15 +245,25 @@ public class GOMStreamGrabber {
 		Matcher m = stream_pattern.matcher(goxxml);
 		String gomcmd = "";
 		if(m.find()){
-			gomcmd = m.group(0);
+			gomcmd = m.group(1);
 		}
 		gomcmd = Uri.decode(gomcmd);
 		if(gomcmd.startsWith("gomp2p://")) 
 		{
 			gomcmd = gomcmd.replaceFirst("^.*LiveAddr=", "");
 		}
+		gomcmd = gomcmd.replaceAll("&amp;", "&");
+		gomcmd = gomcmd.replace("&quot;","");
 		return gomcmd;
 		
+	}
+	
+	private void
+	playStream(String streamURL)
+	{
+		Intent i = new Intent(Intent.ACTION_VIEW);
+		i.setDataAndType(Uri.parse(streamURL),"application/x-mpegURL" );
+		m_context.startActivity(i);
 	}
 	
 		

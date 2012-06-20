@@ -9,5 +9,6 @@
     <string name="hr_password">Password</string>
     <string name="key_password">GSLDROID_PASSWORD</string>
     <string name="play">Play</string>
+    <string name="go">GO</string>
 
 </resources>
