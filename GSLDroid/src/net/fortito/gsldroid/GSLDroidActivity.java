@@ -92,6 +92,7 @@ public class GSLDroidActivity extends Activity
     	SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
     	editor.putString("GSLDROID_USERNAME", username);
     	editor.putString("GSLDROID_PASSWORD",password);
+    	editor.commit();
     }
     /**
      * Connect to GOM stream and start viewing
