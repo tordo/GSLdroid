@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -17,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
@@ -27,14 +29,16 @@ public class GSLDroidActivity extends Activity
 	//////////////////////////////////////////////
 	EditText m_et_username;
 	EditText m_et_password;
+	TextView m_tw_status;
 	Spinner m_spin_quality;
 	Button m_bt_go;
-	
+
 	//////////////////////////////////////////////
-	////////////// Class variables ///////////////
-	//////////////////////////////////////////////	
+	/////////////// Class variables //////////////
+	//////////////////////////////////////////////
 	
-	
+	/** Handler to run code on main thread */
+	Handler m_handler;
 	//////////////////////////////////////////////
 	//////////// Activity callbacks //////////////
 	//////////////////////////////////////////////
@@ -54,6 +58,7 @@ public class GSLDroidActivity extends Activity
         m_et_username = (EditText)findViewById(R.id.et_username);       
         m_et_password = (EditText)findViewById(R.id.et_password);
         m_spin_quality = (Spinner)findViewById(R.id.spin_quality);
+        m_tw_status = (TextView)findViewById(R.id.tw_status);
         ArrayAdapter<String> qualities = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
         qualities.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
@@ -75,11 +80,27 @@ public class GSLDroidActivity extends Activity
         m_et_username.setText(username);
         m_et_password.setText(password);
         
-        
+        m_handler = new Handler();
     }
     
+
+	//////////////////////////////////////////////
+	/////////////// Public methods ///////////////
+	//////////////////////////////////////////////
     
-    
+    public void
+    showUserMsg(final String what)
+    {
+    	m_handler.post(new Runnable(){
+
+			public void run() {
+				m_tw_status.setText(what);
+			}
+    		
+    	}
+    	);
+    	
+    }
     
 	//////////////////////////////////////////////
 	/////////////// Private methods //////////////
@@ -109,6 +130,7 @@ public class GSLDroidActivity extends Activity
 				try {
 					grabber.startStream();
 				} catch (GOMStreamException e) {
+					showUserMsg("ERROR: " + e.getMessage());
 					e.printStackTrace();
 				}
 			}

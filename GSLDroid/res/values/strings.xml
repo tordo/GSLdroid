@@ -10,5 +10,6 @@
     <string name="key_password">GSLDROID_PASSWORD</string>
     <string name="play">Play</string>
     <string name="go">GO</string>
+    <string name="empty_string"></string>
 
 </resources>
