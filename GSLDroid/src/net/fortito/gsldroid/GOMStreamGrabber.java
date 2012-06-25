@@ -65,7 +65,7 @@ public class GOMStreamGrabber {
 	private BasicCookieStore m_cookies;
 	
 	/** Context */
-	private GSLDroidActivity m_context;
+	private GSLDroidActivity m_activity;
 	
 	/** Tag for logging */
 	private static final String TAG = "GOMStreamGrabber";
@@ -79,9 +79,9 @@ public class GOMStreamGrabber {
 	 * @param username GOMTV username
 	 * @param password GOMTV password
 	 */
-	public GOMStreamGrabber(GSLDroidActivity ctx, String username, String password, String quality)
+	public GOMStreamGrabber(GSLDroidActivity act, String username, String password, String quality)
 	{
-		m_context = ctx;
+		m_activity = act;
 		m_username = username;
 		m_password = password;
 		m_quality = quality;
@@ -99,6 +99,7 @@ public class GOMStreamGrabber {
 	 * - Gets live page
 	 * - Parses live page to get stream URL
 	 * - Fires up a MediaPlayer to play the stream
+	 * Uses the 
 	 * @throws GOMStreamException
 	 */
 	public void 
@@ -108,7 +109,7 @@ public class GOMStreamGrabber {
 		login();
 		
 		String livepage = "";
-		m_context.showUserMsg("Getting live page");
+		m_activity.showUserMsg("Getting live page");
 		try {
 			livepage = getPage(getLivePageURL(null));
 		} catch (IllegalStateException e) {
@@ -120,7 +121,7 @@ public class GOMStreamGrabber {
 		}
 		String goxxml = getGOXXML(livepage);
 		String url = "";
-		m_context.showUserMsg("Getting GOX XML");
+		m_activity.showUserMsg("Getting GOX XML");
 		try {
 			url = getStreamURL(getPage(goxxml));
 		} catch (IllegalStateException e) {
@@ -130,7 +131,7 @@ public class GOMStreamGrabber {
 			e.printStackTrace();
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
 		}
-		m_context.showUserMsg("Starting stream");
+		m_activity.showUserMsg("Starting stream");
 		playStream(url);
 		
 	}
@@ -266,7 +267,7 @@ public class GOMStreamGrabber {
 	{
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setDataAndType(Uri.parse(streamURL),"application/x-mpegURL" );
-		m_context.startActivity(i);
+		m_activity.startActivity(i);
 	}
 	
 		
