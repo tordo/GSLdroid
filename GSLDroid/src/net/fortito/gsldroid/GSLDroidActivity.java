@@ -2,6 +2,8 @@ package net.fortito.gsldroid;
 
 import net.fortito.gsldroid.GOMStreamGrabber.GOMStreamException;
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -77,6 +79,7 @@ public class GSLDroidActivity extends Activity
 			}
 		});
         
+        
         m_et_username.setText(username);
         m_et_password.setText(password);
         
@@ -91,7 +94,7 @@ public class GSLDroidActivity extends Activity
     public void
     showUserMsg(final String what)
     {
-    	m_handler.post(new Runnable(){
+    	runOnUiThread(new Runnable(){
 
 			public void run() {
 				m_tw_status.setText(what);
@@ -137,4 +140,5 @@ public class GSLDroidActivity extends Activity
     	
     	}).start();
     }
+    
 }

@@ -105,7 +105,7 @@ public class GOMStreamGrabber {
 	public void 
 	startStream() throws GOMStreamException
 	{
-		
+		m_activity.showUserMsg("Logging in");
 		login();
 		
 		String livepage = "";
@@ -133,7 +133,7 @@ public class GOMStreamGrabber {
 		}
 		m_activity.showUserMsg("Starting stream");
 		playStream(url);
-		
+		m_activity.showUserMsg("");
 	}
 	
 	/**
