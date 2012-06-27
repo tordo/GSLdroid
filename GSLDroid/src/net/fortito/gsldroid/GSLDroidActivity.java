@@ -63,7 +63,7 @@ public class GSLDroidActivity extends Activity
         m_tw_status = (TextView)findViewById(R.id.tw_status);
         ArrayAdapter<String> qualities = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
         qualities.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        //qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
+        qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
         qualities.add(GOMStreamGrabber.QUALITY_SQ);
         qualities.add(GOMStreamGrabber.QUALITY_HQ);
         m_spin_quality.setAdapter(qualities);

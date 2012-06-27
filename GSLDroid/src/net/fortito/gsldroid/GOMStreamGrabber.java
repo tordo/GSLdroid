@@ -123,7 +123,16 @@ public class GOMStreamGrabber {
 		String url = "";
 		m_activity.showUserMsg("Getting GOX XML");
 		try {
-			url = getStreamURL(getPage(goxxml));
+			String xml = getPage(goxxml);
+			// From gomstreamer: The response for the GOX XML if an incorrect stream quality is chosen is 1002.
+			while (xml.equals("1002") || xml.length()==0 && (m_quality != QUALITY_SQ_TEST)){
+				String newQuality = m_quality == QUALITY_HQ ? QUALITY_SQ : QUALITY_SQ_TEST;
+				Log.w(TAG, "Could not find video of quality" +m_quality+", trying "+newQuality);
+				m_quality = newQuality;
+				goxxml = getGOXXML(livepage);
+				xml = getPage(goxxml);
+			}
+			url = getStreamURL(xml);
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
