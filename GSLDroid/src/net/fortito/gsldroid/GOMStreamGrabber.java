@@ -132,6 +132,10 @@ public class GOMStreamGrabber {
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
 		}
 		m_activity.showUserMsg("Starting stream");
+		if(url.equals(""))
+		{
+			throw new GOMStreamException(GOMStreamException.ERROR_EMPTY_STREAM_URL, "Got empty stream URL - are you sure you have bought a season pass?");
+		}
 		playStream(url);
 		m_activity.showUserMsg("");
 	}
@@ -284,6 +288,11 @@ public class GOMStreamGrabber {
 		public static final int ERROR_GET_LIVE_PAGE_URL = 4;
 		/** Error getting the GOX XML */
 		public static final int ERROR_GET_GOX_XML = 5;
+		/** Empty stream URL error, typically caused by not having the season pass */
+		public static final int ERROR_EMPTY_STREAM_URL = 6;
+		
+		
+		
 		/** Exception ID */
 		
 		int id;

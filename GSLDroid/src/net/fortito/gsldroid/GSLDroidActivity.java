@@ -34,13 +34,7 @@ public class GSLDroidActivity extends Activity
 	TextView m_tw_status;
 	Spinner m_spin_quality;
 	Button m_bt_go;
-
-	//////////////////////////////////////////////
-	/////////////// Class variables //////////////
-	//////////////////////////////////////////////
 	
-	/** Handler to run code on main thread */
-	Handler m_handler;
 	//////////////////////////////////////////////
 	//////////// Activity callbacks //////////////
 	//////////////////////////////////////////////
@@ -82,9 +76,7 @@ public class GSLDroidActivity extends Activity
         
         m_et_username.setText(username);
         m_et_password.setText(password);
-        
-        m_handler = new Handler();
-    }
+     }
     
 
 	//////////////////////////////////////////////
@@ -98,17 +90,17 @@ public class GSLDroidActivity extends Activity
 
 			public void run() {
 				m_tw_status.setText(what);
-			}
-    		
+			}		
     	}
     	);
-    	
     }
     
 	//////////////////////////////////////////////
 	/////////////// Private methods //////////////
 	//////////////////////////////////////////////
-    
+    /**
+     * Save authentication data from text boxes
+     */
     private void saveAuthData()
     {
     	String password = m_et_password.getText().toString().trim();
@@ -118,6 +110,7 @@ public class GSLDroidActivity extends Activity
     	editor.putString("GSLDROID_PASSWORD",password);
     	editor.commit();
     }
+    
     /**
      * Connect to GOM stream and start viewing
      */
