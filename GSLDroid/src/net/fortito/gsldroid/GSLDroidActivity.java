@@ -50,25 +50,34 @@ public class GSLDroidActivity extends Activity
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String username = prefs.getString("GSLDROID_USERNAME","");
         String password = prefs.getString("GSLDROID_PASSWORD","");
-        
+        String quality = prefs.getString("GSLDROID_QUALITY", GOMStreamGrabber.QUALITY_SQ);
         m_et_username = (EditText)findViewById(R.id.et_username);       
         m_et_password = (EditText)findViewById(R.id.et_password);
         m_spin_quality = (Spinner)findViewById(R.id.spin_quality);
         m_tw_status = (TextView)findViewById(R.id.tw_status);
         ArrayAdapter<String> qualities = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
         qualities.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        //qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
+        qualities.add(GOMStreamGrabber.QUALITY_SQ_TEST);
         qualities.add(GOMStreamGrabber.QUALITY_SQ);
         qualities.add(GOMStreamGrabber.QUALITY_HQ);
         m_spin_quality.setAdapter(qualities);
-
+        for(int i = 0; i < qualities.getCount(); i++)
+        {
+        	if(quality.equals(qualities.getItem(i)))
+        	{
+        		m_spin_quality.setSelection(i);
+        	}
+        		
+        }
+        
         m_bt_go = (Button)findViewById(R.id.button1);
         
         m_bt_go.setOnClickListener(new OnClickListener() {
 			
 			public void onClick(View v) {
 				saveAuthData();
-				startVideo();
+				Intent i = new Intent(GSLDroidActivity.this, PickVodActivity.class);
+				startActivity(i);
 				
 			}
 		});
@@ -105,9 +114,11 @@ public class GSLDroidActivity extends Activity
     {
     	String password = m_et_password.getText().toString().trim();
     	String username = m_et_username.getText().toString().trim();
+    	String quality = (String)m_spin_quality.getAdapter().getItem(m_spin_quality.getSelectedItemPosition());
     	SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
     	editor.putString("GSLDROID_USERNAME", username);
     	editor.putString("GSLDROID_PASSWORD",password);
+    	editor.putString("GSLDROID_QUALITY", quality);
     	editor.commit();
     }
     
@@ -133,5 +144,26 @@ public class GSLDroidActivity extends Activity
     	
     	}).start();
     }
+    private void startTestVod()
+    {
+    	final GOMVODGrabber g = new GOMVODGrabber(this, m_et_username.getText().toString().trim(), 
+    			m_et_password.getText().toString().trim(), 
+    			(String)m_spin_quality.getAdapter().getItem(m_spin_quality.getSelectedItemPosition()));
+    	new Thread(new Runnable() {
+
+			public void run() {
+				try {
+					g.startVod("http://www.gomtv.net/2012gsls5/vod/71059/?set=1");
+				} catch (GOMStreamException e) {
+					showUserMsg("ERROR: " + e.getMessage());
+					e.printStackTrace();
+				}
+			}
+    	
+    	}).start();
+    		
+    	
+    }
+    
     
 }

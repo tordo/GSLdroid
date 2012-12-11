@@ -20,6 +20,7 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -47,7 +48,7 @@ public class GOMStreamGrabber {
 	/** GOMTV Password */
 	private String m_password;
 	/** Video quality */
-	private String m_quality;
+	protected String m_quality;
 	
 	/** Stream Quality: SQ TEST */
 	public static final String QUALITY_SQ_TEST = "SQTest";
@@ -56,6 +57,7 @@ public class GOMStreamGrabber {
 	/** Stream Quality: HQ */
 	public static final String QUALITY_HQ = "HQ";
 	
+	private boolean m_loggedin = false;
 
 	/** Http client to do our requests */
 	private AndroidHttpClient m_httpclient;
@@ -65,7 +67,7 @@ public class GOMStreamGrabber {
 	private BasicCookieStore m_cookies;
 	
 	/** Context */
-	private GSLDroidActivity m_activity;
+	protected Activity m_activity;
 	
 	/** Tag for logging */
 	private static final String TAG = "GOMStreamGrabber";
@@ -79,7 +81,7 @@ public class GOMStreamGrabber {
 	 * @param username GOMTV username
 	 * @param password GOMTV password
 	 */
-	public GOMStreamGrabber(GSLDroidActivity act, String username, String password, String quality)
+	public GOMStreamGrabber(Activity act, String username, String password, String quality)
 	{
 		m_activity = act;
 		m_username = username;
@@ -93,6 +95,7 @@ public class GOMStreamGrabber {
 		m_httpcontext.setAttribute(ClientContext.COOKIE_STORE, m_cookies);
 	}
 	
+	
 	/**
 	 * Start the stream. This does:
 	 * - Login
@@ -105,11 +108,11 @@ public class GOMStreamGrabber {
 	public void 
 	startStream() throws GOMStreamException
 	{
-		m_activity.showUserMsg("Logging in");
+		showUserMsg("Logging in");
 		login();
 		
 		String livepage = "";
-		m_activity.showUserMsg("Getting live page");
+		showUserMsg("Getting live page");
 		try {
 			livepage = getPage(getLivePageURL(null));
 		} catch (IllegalStateException e) {
@@ -121,7 +124,7 @@ public class GOMStreamGrabber {
 		}
 		String goxxml = getGOXXML(livepage);
 		String url = "";
-		m_activity.showUserMsg("Getting GOX XML");
+		showUserMsg("Getting GOX XML");
 		try {
 			url = getStreamURL(getPage(goxxml));
 		} catch (IllegalStateException e) {
@@ -131,21 +134,24 @@ public class GOMStreamGrabber {
 			e.printStackTrace();
 			throw new GOMStreamException(GOMStreamException.ERROR_GET_GOX_XML, "Could not get GOX XML");
 		}
-		m_activity.showUserMsg("Starting stream");
+		showUserMsg("Starting stream");
 		if(url.equals(""))
 		{
 			throw new GOMStreamException(GOMStreamException.ERROR_EMPTY_STREAM_URL, "Got empty stream URL - are you sure you have bought a season pass?");
 		}
 		playStream(url);
-		m_activity.showUserMsg("");
+		showUserMsg("");
 	}
-	
+	public void setQuality(String quality)
+	{
+		m_quality = quality;
+	}
 	/**
 	 * Login to GOMtv.net
 	 * This function logs in to GOMtv.net, and the login cookies are set in m_httpcontext/m_cookies as a result.
 	 * @throws GOMStreamException
 	 */
-	private void 
+	protected void 
 	login() throws GOMStreamException
 	{
 		// Build HTTP Request
@@ -179,7 +185,7 @@ public class GOMStreamGrabber {
 		// If we didn't get any cookies, fail
 		if(m_cookies.getCookies().size() == 0)
 			throw new GOMStreamException(GOMStreamException.ERROR_LOGIN, "Did not get cookies, wrong username/password?");
-		
+		m_loggedin = true;
 		Log.d(TAG, "Logged in!");
 	}
 	
@@ -187,10 +193,12 @@ public class GOMStreamGrabber {
 	 * Get the contents of a page, using the local httpcontext
 	 * @param URL The url of the page to get
 	 * @return The contents of the page
+	 * @throws GOMStreamException 
 	 */
-	private String
-	getPage(String URL) throws IOException,IllegalStateException
+	protected String
+	getPage(String URL) throws IOException,IllegalStateException, GOMStreamException
 	{
+		if(!m_loggedin) login();
 		HttpGet req = new HttpGet(URL);
 		HttpResponse response = m_httpclient.execute(req,m_httpcontext);
 	
@@ -305,5 +313,10 @@ public class GOMStreamGrabber {
 			super(msg);
 			this.id = id;
 		}
+	}
+	
+	public void showUserMsg(String s)
+	{
+		
 	}
 }

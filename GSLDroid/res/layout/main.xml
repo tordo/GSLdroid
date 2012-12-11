@@ -49,7 +49,7 @@
         android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/go" />
+        android:text="@string/login" />
 
     <TextView
         android:id="@+id/tw_status"
@@ -57,5 +57,14 @@
         android:layout_height="wrap_content"
         android:text="@string/empty_string"
         android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:text="@string/helptext"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
 </LinearLayout>
